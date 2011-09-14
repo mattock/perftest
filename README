@@ -75,8 +75,16 @@ instead of stdout.
 USAGE
 -----
 
-If you're using the Amazon EC2 provider, you need to edit the ec2.conf file to 
-your liking. In addition, you need to use the appropriate command-line flags; to 
-see them enter
+If you're using the Amazon EC2 provider, you need to edit the ec2.conf.sample 
+file to your liking and rename it as ec2.conf. In addition, you need to use the 
+appropriate command-line flags; to see them type
 
 $ python start.py -h
+
+
+TODO
+----
+
+- Clean up threading
+- Reimplement full "test" provider
+- Fix everything that can be found using "grep FIXME *"
