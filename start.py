@@ -113,7 +113,6 @@ def launch_ec2(keyfile,instances):
 def create_testsuite():
 	"""Generate all dynamic files needed for controlling the tests on the client-side. Static files are placed in ./resources/"""
 
-
 	try:
 		tconfig = ConfigParser.RawConfigParser()
 		tfilename = "config/tests.conf"
@@ -133,7 +132,7 @@ def create_testsuite():
 	# Generate crontab from config/tests.conf and config/cron.conf, mostly 
 	# for timing the tests accurately.
 	sections = tconfig.sections()
-	tests = []
+	#tests = []
 
 	try:
 		crontab = open("./resources/crontab","w")
@@ -146,7 +145,7 @@ def create_testsuite():
 			test['server'] = tconfig.get(section,"server")
 			test['time'] = tconfig.get(section,"time")
 			crontab.write(get_cronjob(test['time'],"/tmp/"+test['testscript']+" "+test['server']))
-			tests.append(test)
+			#tests.append(test)
 		crontab.close()
 
 		# Old approach was this:
@@ -165,14 +164,13 @@ def create_testsuite():
 		error_config_missing(filename)
 		sys.exit(1)
 
-	# Configurer threads need the "tests" array
-	return tests
+	#return tests
 
 def main():
 	"""Main program"""
 	# Fabric-specific variables are wrapped into an object for convenience
 	fc = fabricconf()
-	fc.tests = create_testsuite()
+	create_testsuite()
 
 	# Configurer-specific default variables
 	threads = 4
@@ -241,11 +239,11 @@ def main():
 		sys.exit(0)
 
 	# Launch configurer threads
-	for id in range(1,threads):
+	for id in range(0,threads):
 		configthr = configurer(id,fc,launchthr.queue)
 		# We _don't_ want to make these threads daemonic, or we might 
 		# run into nasty issue with half-configured servers
-		#configthr.setDaemon(True)
+		configthr.setDaemon(True)
 		configthr.start()
 
 if __name__ == "__main__":

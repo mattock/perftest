@@ -9,9 +9,6 @@ class fabricconf():
 		self.password = password
 		self.keyfile = keyfile
 		self.no_agent = True
-		self.tests = tests
-		self.filesrc = "resources"
-		self.vpndst = "/etc/openvpn"
 
 	def __str__(self):
 		return self.username

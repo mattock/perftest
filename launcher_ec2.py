@@ -6,6 +6,7 @@ from boto.ec2 import *
 from time import sleep
 import threading
 import Queue
+import sys
 
 class launcher_ec2(threading.Thread):
 	"""Threaded class that creates one or more VMs on Amazon"""
@@ -83,13 +84,18 @@ class launcher_ec2(threading.Thread):
 						instance.state == 'running':
 							self.queued_instances.append(ip)
 							self.queue.put(ip)
-							print "launcher_ec2: queued IP "+ip 
+							print "launcher_ec2: queued IP "+ip+"\n" 
 						else:
 							self.invalid_instances.append(ip)
 
-			# Debugging information
-			#print "Queued: "+str(self.queued_instances)
-			#print "Invalid: "+str(self.invalid_instances)
+
+			# Test if the queue is empty 
+			#if self.queued_instances and self.queue.empty():
+			#	print "Queue empty, exiting..."
+			#	sys.exit(1)
+			#else:
+			#	print "Entries in queue: "+str(self.queue.qsize())
 
 			# Sleep for a while before next run
 			sleep(10)
+
