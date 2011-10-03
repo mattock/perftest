@@ -1,6 +1,7 @@
 [instance]
 instance_type=m1.small
 user=ubuntu
+instances=2
 
 [authentication]
 aws_access_key_id=your_access_key_id_here

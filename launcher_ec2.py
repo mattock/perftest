@@ -10,7 +10,7 @@ import Queue
 class launcher_ec2(threading.Thread):
 	"""Threaded class that creates one or more VMs on Amazon"""
 
-	def __init__(self, aws_access_key_id,aws_secret_access_key,image_id,instance_type,security_group,key_name):
+	def __init__(self, aws_access_key_id,aws_secret_access_key,image_id,instance_type,instances,security_group,key_name):
 		""" Initialize this instance"""
 		# Run the init function of the superclass
 		threading.Thread.__init__(self)
@@ -20,6 +20,8 @@ class launcher_ec2(threading.Thread):
 		self.aws_secret_access_key = aws_secret_access_key
 		self.image_id = image_id
 		self.instance_type = instance_type
+		self.instances = instances
+
 		# Boto needs an array with security groups
 		self.security_groups = []
 		self.security_groups.append(security_group)
@@ -48,12 +50,12 @@ class launcher_ec2(threading.Thread):
 		# Establish EC2 connection
 		conn = EC2Connection(self.aws_access_key_id,self.aws_secret_access_key)
 
-		# Create VM instances (once per session)
+		# Create new VM instances (if requested)
 		#
-		# FIXME: make min_count and max_count configurable in ec2.conf
-		reservation = conn.run_instances(image_id=self.image_id,min_count=1,max_count=1,\
-		key_name=self.key_name,security_groups=self.security_groups,\
-		instance_type=self.instance_type,placement=None)
+		if self.instances > 0:
+			reservation = conn.run_instances(image_id=self.image_id,min_count=1,max_count=self.instances,\
+			key_name=self.key_name,security_groups=self.security_groups,\
+			instance_type=self.instance_type,placement=None)			
 
 		# Start polling for activated instances.
 		#
