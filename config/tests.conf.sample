@@ -1,0 +1,11 @@
+[test1]
+server=server.domain.com
+time=3
+
+[test2]
+server=server.domain.com
+time=5
+
+[test3]
+server=server.domain.com
+time=7

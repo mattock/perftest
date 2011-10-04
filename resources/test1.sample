@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Name of the server is given to this script as first argument ($1)
+
+function cleanup {
+        /etc/init.d/openvpn stop
+}
+
+function test {
+        /etc/init.d/openvpn start
+	# Do something
+        /etc/init.d/openvpn stop
+}
+
+# Main program
+cleanup
+test

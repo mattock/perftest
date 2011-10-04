@@ -1,0 +1,3 @@
+[cron]
+shell=/bin/bash
+path=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
