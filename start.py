@@ -20,7 +20,7 @@ from fabricconf import fabricconf
 def Usage():
 	"""Show usage information"""
 	print
-	print "Usage: start [options]"
+	print "Usage: python start.py [options]"
 	print
 	print "Options:"
 	print "  -u username  | --username=username      SSH username"
@@ -32,9 +32,19 @@ def Usage():
 	print "  -t threads   | --threads=threads        number of configurer (Fabric) threads"
 	print "                                          to allocate. If 0, skip configuring"
 	print "                                          altogether."
+	print "Examples:"
 	print
-	print "Available VM providers"
-	print_vm_providers()
+	print "Configure running instances without creating any new ones:"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 0 -t 4"
+	print
+	print "Create 4 new instances without configuring anything:"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 0"
+	print
+	print "Create 4 new instances and configure all running instances:"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4"
+	#print
+	#print "Available VM providers"
+	#print_vm_providers()
 	sys.exit(1)
 
 
@@ -170,7 +180,6 @@ def main():
 	"""Main program"""
 	# Fabric-specific variables are wrapped into an object for convenience
 	fc = fabricconf()
-	create_testsuite()
 
 	# Configurer-specific default variables
 	threads = 4
@@ -223,6 +232,8 @@ def main():
 		print "Error: The ec2 provider requires use of a keyfile"
 		Usage()
 
+	# Create the testsuite
+	create_testsuite()
 
 	# Launch the provider thread
 	if provider == "ec2":
