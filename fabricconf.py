@@ -4,7 +4,7 @@
 
 class fabricconf():
 
-	def __init__(self,username=None,password=None,keyfile=None,tests=[]):
+	def __init__(self,username=None,password=None,keyfile=None):
 		self.username = username
 		self.password = password
 		self.keyfile = keyfile

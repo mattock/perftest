@@ -45,10 +45,11 @@ class configurer(threading.Thread):
 			args.append("-u")
 			args.append(self.fc.username)
 			args.append("-w")
-			args.append("setup_client")
+			args.append("setup_"+self.fc.role)
 
-			# Launch a separate process for this instance of Fabric
-			fp = subprocess.Popen(args)
+			# Launch a separate process for this instance of Fabric 
+			# and wait for it to return
+			fp = subprocess.call(args)
 
 			print "configurer-"+ str(self.id) + " finished" 
 

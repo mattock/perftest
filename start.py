@@ -27,6 +27,8 @@ def Usage():
 	print "  -p password  | --password=password      SSH password"
 	print "  -k keyfile   | --keyfile=keyfile        SSH key filename"
 	print "  -o provider  | --provider=provider      VM provider"
+	print "  -r role      | --role=role              role of the VM; used to select which"
+	print "                                          Fabric tasks to run on which VMs"
 	print "  -i instances | --instances=instances    number of _new_ VM instances to deploy,"
 	print "                                          use 0 to only connect to existing ones."
 	print "  -t threads   | --threads=threads        number of configurer (Fabric) threads"
@@ -34,14 +36,14 @@ def Usage():
 	print "                                          altogether."
 	print "Examples:"
 	print
-	print "Configure running instances without creating any new ones:"
-	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 0 -t 4"
+	print "Setup already running instances as test clients"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 0 -t 4 -r client"
 	print
 	print "Create 4 new instances without configuring anything:"
 	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 0"
 	print
-	print "Create 4 new instances and configure all running instances:"
-	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4"
+	print "Create 4 new instances and configure all running instances as clients:"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4 -a client"
 	#print
 	#print "Available VM providers"
 	#print_vm_providers()
@@ -89,8 +91,8 @@ def launch_local():
 	#launchthr = launcher_test()
 	#launchthr.start()
 
-def launch_ec2(keyfile,instances):
-
+def launch_ec2(keyfile,role,instances):
+	"""Parse config/ec2.conf and fire up the EC2 launcher thread"""
 	config = ConfigParser.RawConfigParser()
 	filename = "config/ec2.conf"
 	try:
@@ -105,6 +107,7 @@ def launch_ec2(keyfile,instances):
 		image_id = config.get("filters","image_id")
 		security_group = config.get("filters","security_group")
 		instance_type = config.get("instance","instance_type")
+		availability_zone = config.get("instance","availability_zone")
 	except:
 		print "Error in "+filename+", please take a look at "+filename+".sample"
 		sys.exit(1)
@@ -114,7 +117,7 @@ def launch_ec2(keyfile,instances):
 	key_name = splitext(key_name)
 
 	# Launch the provider thread
-	launchthr = launcher_ec2(aws_access_key_id,aws_secret_access_key,image_id,instance_type,instances,security_group,key_name[0])
+	launchthr = launcher_ec2(aws_access_key_id,aws_secret_access_key,image_id,instance_type,instances,security_group,key_name[0],availability_zone,role)
 	launchthr.start()
 
 	# Return the provider thread: configurer threads need access to it's queue
@@ -142,7 +145,6 @@ def create_testsuite():
 	# Generate crontab from config/tests.conf and config/cron.conf, mostly 
 	# for timing the tests accurately.
 	sections = tconfig.sections()
-	#tests = []
 
 	try:
 		crontab = open("./resources/crontab","w")
@@ -158,14 +160,6 @@ def create_testsuite():
 			#tests.append(test)
 		crontab.close()
 
-		# Old approach was this:
-		#		
-		# http://stackoverflow.com/questions/1001538/how-do-i-concatenate-files-in-python
-		#crontab = open("./resources/crontab","w")
-		#shutil.copyfileobj(open("./resources/crontab-skeleton","r"),crontab)
-		#shutil.copyfileobj(open("./resources/jobs","r"),crontab)
-		#crontab.close()
-
 	except ConfigParser.Error:
 		print "Error in "+filename+", please take a look at "+filename+".sample"
 		sys.exit(1)
@@ -180,17 +174,15 @@ def main():
 	"""Main program"""
 	# Fabric-specific variables are wrapped into an object for convenience
 	fc = fabricconf()
-
-	# Configurer-specific default variables
 	threads = 4
-
-	# Launcher-specific default variables
 	provider = "local"
 
 	# Parse command-line arguments
 	try:
 		# Arguments that are followed by a : require a value
-                opts, args = getopt.getopt(sys.argv[1:], "hu:p:k:o:i:t:", ["help", "username=", "password=", "keyfile=", "provider=", "instances=", "threads="])
+                opts, args = getopt.getopt(sys.argv[1:], "hu:p:k:o:r:i:t:",\
+		["help", "username=", "password=", "keyfile=", "provider=",\
+		"role=", "instances=", "threads="])
         except getopt.GetoptError:
                 Usage()
                 sys.exit(1)
@@ -206,6 +198,8 @@ def main():
                         fc.keyfile = a
                 if o in ("-o", "--provider"):
                         provider = a
+                if o in ("-r", "--role"):
+                        fc.role = a
                 if o in ("-i", "--instances"):
                         instances = int(a)
                 if o in ("-t", "--threads"):
@@ -232,12 +226,16 @@ def main():
 		print "Error: The ec2 provider requires use of a keyfile"
 		Usage()
 
+	# By default setup a test client
+	if fc.role is None:
+		fc.role = "client"
+
 	# Create the testsuite
 	create_testsuite()
 
 	# Launch the provider thread
 	if provider == "ec2":
-		launchthr = launch_ec2(fc.keyfile,instances)
+		launchthr = launch_ec2(fc.keyfile,fc.role,instances)
 	elif provider == "test":
 		print "ERROR: test provider only partially implemented"
 		sys.exit(1)

@@ -7,11 +7,12 @@ from time import sleep
 import threading
 import Queue
 import sys
+import base64
 
 class launcher_ec2(threading.Thread):
 	"""Threaded class that creates one or more VMs on Amazon"""
 
-	def __init__(self, aws_access_key_id,aws_secret_access_key,image_id,instance_type,instances,security_group,key_name):
+	def __init__(self, aws_access_key_id,aws_secret_access_key,image_id,instance_type,instances,security_group,key_name,availability_zone,role):
 		""" Initialize this instance"""
 		# Run the init function of the superclass
 		threading.Thread.__init__(self)
@@ -21,12 +22,23 @@ class launcher_ec2(threading.Thread):
 		self.aws_secret_access_key = aws_secret_access_key
 		self.image_id = image_id
 		self.instance_type = instance_type
+		self.availability_zone = availability_zone
 		self.instances = instances
 
 		# Boto needs an array with security groups
 		self.security_groups = []
 		self.security_groups.append(security_group)
 		self.key_name = key_name
+
+		# A role definition is attached to each instance on EC2 side 
+		# (technically as userData attribute). This allows us to avoid 
+		# queuing (and thus configuring) wrong VMs, for example an 
+		# already running server as a client.
+		#
+		# TODO: replace with tags when upgrading to Boto 2.0+
+		# TODO: replace the current instance filtering scheme with this
+		#       approach
+		self.role = role
 
                 # We need to separately track instances which have been put to 
                 # the queue to avoid rerunning Fabric commands on same servers;
@@ -56,7 +68,7 @@ class launcher_ec2(threading.Thread):
 		if self.instances > 0:
 			reservation = conn.run_instances(image_id=self.image_id,min_count=1,max_count=self.instances,\
 			key_name=self.key_name,security_groups=self.security_groups,\
-			instance_type=self.instance_type,placement=None)			
+			instance_type=self.instance_type,user_data=self.role,placement=self.availability_zone)
 
 		# Start polling for activated instances.
 		#
@@ -77,11 +89,20 @@ class launcher_ec2(threading.Thread):
 					if ip in self.invalid_instances or ip in self.queued_instances:
 						pass
 					else:
-						# Check if we want to add this instance to the queue 
+						b64userdata=conn.get_instance_attribute(instance.id,"userData")['userData']
+						if b64userdata:
+							userdata = base64.b64decode(b64userdata)
+						else:
+							userdata = ""
+
+						# Check if we want to add this instance to the queue. Note that
+						# get_instance_attribute does _not_ return one attribute, but a
+						# but a dictionary (a bug?)
 						if instance.key_name == self.key_name and\
 						instance.image_id == self.image_id and\
 						instance.instance_type == self.instance_type and\
-						instance.state == 'running':
+						instance.state == 'running' and\
+						userdata == self.role:
 							self.queued_instances.append(ip)
 							self.queue.put(ip)
 							print "launcher_ec2: queued IP "+ip+"\n" 
