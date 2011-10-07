@@ -69,6 +69,10 @@ class launcher_ec2(threading.Thread):
 			reservation = conn.run_instances(image_id=self.image_id,min_count=1,max_count=self.instances,\
 			key_name=self.key_name,security_groups=self.security_groups,\
 			instance_type=self.instance_type,user_data=self.role,placement=self.availability_zone)
+			
+			# FIXME: test if connection to a to-be-configured server 
+			# can be established, instead of using a hack like this
+			sleep(30)			
 
 		# Start polling for activated instances.
 		#

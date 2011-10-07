@@ -91,8 +91,12 @@ def setup_server():
     config = ["server.conf"]
     put_secret_files(src,vpndst,config)
 
+    # Install convenience wrapper for dstat
+    put_executables(src,"/tmp",["dstat.sh"])
+
     # Launch openvpn and iperf
     sudo_except("/etc/init.d/openvpn restart")
+
 
     # Launching iperf using Fabric does not seem to work
     # sudo_except("/usr/bin/iperf -s -D &")
@@ -110,3 +114,14 @@ def setup_client():
 
     # Copy test scripts
     put_executables(src,"/tmp",get_tests())
+
+@task
+def get_client_logs():
+    """Get logfiles from clients"""
+    get("/tmp/iperf.log","logs/%(path)s-%(host)s")
+
+@task
+def get_server_logs():
+    """Get logfiles from servers"""
+    get("/tmp/dstat.csv","logs/%(path)s-%(host)s")
+

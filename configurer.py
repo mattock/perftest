@@ -45,7 +45,7 @@ class configurer(threading.Thread):
 			args.append("-u")
 			args.append(self.fc.username)
 			args.append("-w")
-			args.append("setup_"+self.fc.role)
+			args.append(self.fc.task)
 
 			# Launch a separate process for this instance of Fabric 
 			# and wait for it to return

@@ -28,7 +28,8 @@ def Usage():
 	print "  -k keyfile   | --keyfile=keyfile        SSH key filename"
 	print "  -o provider  | --provider=provider      VM provider"
 	print "  -r role      | --role=role              role of the VM; used to select which"
-	print "                                          Fabric tasks to run on which VMs"
+	print "                                          VMs to configure"
+	print "  -a task      | --task=task              name of the Fabric task to run on the VMs"
 	print "  -i instances | --instances=instances    number of _new_ VM instances to deploy,"
 	print "                                          use 0 to only connect to existing ones."
 	print "  -t threads   | --threads=threads        number of configurer (Fabric) threads"
@@ -44,6 +45,9 @@ def Usage():
 	print
 	print "Create 4 new instances and configure all running instances as clients:"
 	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4 -a client"
+	print
+	print "Download logs from all clients:"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 0 -t 4 -a client -a get_logs"
 	#print
 	#print "Available VM providers"
 	#print_vm_providers()
@@ -154,9 +158,9 @@ def create_testsuite():
 		for section in sections:
 			test = {}
 			test['testscript'] = section
-			test['server'] = tconfig.get(section,"server")
+			test['remote'] = tconfig.get(section,"remote")
 			test['time'] = tconfig.get(section,"time")
-			crontab.write(get_cronjob(test['time'],"/tmp/"+test['testscript']+" "+test['server']))
+			crontab.write(get_cronjob(test['time'],"/tmp/"+test['testscript']+" "+test['remote']))
 			#tests.append(test)
 		crontab.close()
 
@@ -180,9 +184,9 @@ def main():
 	# Parse command-line arguments
 	try:
 		# Arguments that are followed by a : require a value
-                opts, args = getopt.getopt(sys.argv[1:], "hu:p:k:o:r:i:t:",\
+                opts, args = getopt.getopt(sys.argv[1:], "hu:p:k:o:r:a:i:t:",\
 		["help", "username=", "password=", "keyfile=", "provider=",\
-		"role=", "instances=", "threads="])
+		"role=", "task=", "instances=", "threads="])
         except getopt.GetoptError:
                 Usage()
                 sys.exit(1)
@@ -199,7 +203,9 @@ def main():
                 if o in ("-o", "--provider"):
                         provider = a
                 if o in ("-r", "--role"):
-                        fc.role = a
+                        role = a
+                if o in ("-a", "--task"):
+                        fc.task = a
                 if o in ("-i", "--instances"):
                         instances = int(a)
                 if o in ("-t", "--threads"):
@@ -227,15 +233,18 @@ def main():
 		Usage()
 
 	# By default setup a test client
-	if fc.role is None:
-		fc.role = "client"
+	if role is None:
+		role = "client"
+
+	if fc.task is None:
+		fc.task = "setup_client"
 
 	# Create the testsuite
 	create_testsuite()
 
 	# Launch the provider thread
 	if provider == "ec2":
-		launchthr = launch_ec2(fc.keyfile,fc.role,instances)
+		launchthr = launch_ec2(fc.keyfile,role,instances)
 	elif provider == "test":
 		print "ERROR: test provider only partially implemented"
 		sys.exit(1)
