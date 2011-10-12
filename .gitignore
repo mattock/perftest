@@ -1,3 +1,4 @@
 config/ec2.conf
 config/cron.conf
 config/tests.conf
+config/as-userdata.conf
