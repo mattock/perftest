@@ -35,19 +35,23 @@ def Usage():
 	print "  -t threads   | --threads=threads        number of configurer (Fabric) threads"
 	print "                                          to allocate. If 0, skip configuring"
 	print "                                          altogether."
+	print "  -m remote    | --remote=remote          Remote OpenVPN server (LAN IP)"
+        print "  -e peer      | --peer=peer              OpenVPN peer (VPN IP)"
+        print
 	print "Examples:"
 	print
-	print "Setup already running instances as test clients"
-	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 0 -t 4 -r client"
+	print "Setup already running instances as test clients using SSH credentials from config/ssh.conf"
+	print "and connecting to OpenVPN server at vpn.domain.com."
+	print "   python start.py -o ec2 -i 0 -t 4 -r client -a setup_client -m vpn.domain.com"
 	print
-	print "Create 4 new instances without configuring anything:"
+	print "Create 4 new client instances without configuring anything:"
 	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 0"
 	print
 	print "Create 4 new instances and configure all running instances as clients:"
-	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4 -a client"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4 -r client -a setup_client -m vpn.domain.com"
 	print
-	print "Download logs from all clients:"
-	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 0 -t 4 -a client -a get_logs"
+	print "Download logs from all clients using credentials from config/ssh.conf:"
+	print "   python start.py -i 0 -t 4 -r client -a get_client_logs"
 	#print
 	#print "Available VM providers"
 	#print_vm_providers()
@@ -127,7 +131,7 @@ def launch_ec2(keyfile,role,instances):
 	# Return the provider thread: configurer threads need access to it's queue
 	return launchthr
 
-def create_testsuite():
+def create_testsuite(remote,peer):
 	"""Generate all dynamic files needed for controlling the tests on the client-side. Static files are placed in ./resources/"""
 
 	try:
@@ -158,9 +162,10 @@ def create_testsuite():
 		for section in sections:
 			test = {}
 			test['testscript'] = section
-			test['remote'] = tconfig.get(section,"remote")
+			test['remote'] = remote
+			test['peer'] = peer
 			test['time'] = tconfig.get(section,"time")
-			crontab.write(get_cronjob(test['time'],"/tmp/"+test['testscript']+" "+test['remote']))
+			crontab.write(get_cronjob(test['time'],"/tmp/"+test['testscript']+" "+test['remote']+" "+test['peer']))
 			#tests.append(test)
 		crontab.close()
 
@@ -178,15 +183,42 @@ def main():
 	"""Main program"""
 	# Fabric-specific variables are wrapped into an object for convenience
 	fc = fabricconf()
-	threads = 4
-	provider = "local"
+
+	# Default variables
+	threads = 1
+	provider = "ec2"
+	role = "client"
+	instances = 0
+	fc.task = "setup_client"
+	remote = None
+	peer = None
+
+	# Load configuration settings from ssh.conf. Anything given on the 
+	# command-line will override these.
+	try:
+		sshconfig = ConfigParser.RawConfigParser()
+		sshfilename = "config/ssh.conf"
+		sshconfig.readfp(open(sshfilename))
+	except IOError:
+		pass
+
+	authdetails = {}
+	for i in ["username","keyfile","password"]:
+		try:
+			authdetails[i] = sshconfig.get("ssh",i)
+		except:
+			authdetails[i] = None
+
+	fc.username = authdetails["username"]
+	fc.keyfile = authdetails["keyfile"]
+	fc.password = authdetails["password"]
 
 	# Parse command-line arguments
 	try:
 		# Arguments that are followed by a : require a value
-                opts, args = getopt.getopt(sys.argv[1:], "hu:p:k:o:r:a:i:t:",\
+                opts, args = getopt.getopt(sys.argv[1:], "hu:p:k:o:r:a:i:t:m:e:",\
 		["help", "username=", "password=", "keyfile=", "provider=",\
-		"role=", "task=", "instances=", "threads="])
+		"role=", "task=", "instances=", "threads=", "remote=", "peer="])
         except getopt.GetoptError:
                 Usage()
                 sys.exit(1)
@@ -198,49 +230,31 @@ def main():
 			fc.username = a
                 if o in ("-p", "--password"): 
                         fc.password = a
-                if o in ("-k", "--keyfile"): 
+                if o in ("-k", "--keyfile"):
                         fc.keyfile = a
                 if o in ("-o", "--provider"):
                         provider = a
+		if o in ("-t", "--threads"):
+			threads = int(a)
                 if o in ("-r", "--role"):
                         role = a
                 if o in ("-a", "--task"):
                         fc.task = a
                 if o in ("-i", "--instances"):
                         instances = int(a)
-                if o in ("-t", "--threads"):
-			threads = int(a)
-			
-	# Verify sanity of command-line arguments
-	if fc.username is None:
-		print
-		print "ERROR: Missing SSH username"
-		Usage()
+                if o in ("-m", "--remote"):
+			remote = a
+                if o in ("-e", "--peer"):
+			peer = a
 
-	if fc.keyfile is None and fc.password is None:
-		print
-		print "ERROR: Missing SSH keyfile or password!"
-		Usage()
+	if remote is not None and peer is not None:
+		create_testsuite(remote,peer)
 
-	if fc.keyfile is not None and fc.password is not None:
-		print
-		print "ERROR: Please provide only a keyfile or password, not both"
-		Usage()
+	# FIXME: implement dynamic peer definitions in tests
+	#if peer is None:
+	#	print "Option \"peer\" missing!"
+	#	Usage()
 
-	if fc.keyfile is None and provider == "ec2":
-		print
-		print "Error: The ec2 provider requires use of a keyfile"
-		Usage()
-
-	# By default setup a test client
-	if role is None:
-		role = "client"
-
-	if fc.task is None:
-		fc.task = "setup_client"
-
-	# Create the testsuite
-	create_testsuite()
 
 	# Launch the provider thread
 	if provider == "ec2":
@@ -249,20 +263,17 @@ def main():
 		print "ERROR: test provider only partially implemented"
 		sys.exit(1)
 	else:
-		print "ERROR: invalid provider"
-		Usage()
-
-	if threads == 0:
-		print "No configurer threads, skipping configuration part."
-		sys.exit(0)
+		print "Skipping provisioning as requested."
 
 	# Launch configurer threads
-	for id in range(0,threads):
-		configthr = configurer(id,fc,launchthr.queue)
-		# We _don't_ want to make these threads daemonic, or we might 
-		# run into nasty issue with half-configured servers
-		configthr.setDaemon(True)
-		configthr.start()
+	if threads == 0:
+		print "No configurer threads, skipping configuration part."
+	else:
+		for id in range(0,threads):
+			configthr = configurer(id,fc,launchthr.queue)
+			configthr.setDaemon(False)
+			configthr.start()
+	sys.exit(0)
 
 if __name__ == "__main__":
 	main()
