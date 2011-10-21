@@ -56,9 +56,16 @@ def set_strict_perms(file):
     sudo_except("chown root:root "+file)
     sudo_except("chmod 400 "+file)
 
+def rename(src,dst):
+    """Rename a file"""
+    sudo_except("mv "+src+" "+dst)
 
 def setup_common():
-    """Setup things that are common to clients and servers"""
+    """Setup things that are common to (OpenVPN) clients and servers"""
+
+    # Make sure OpenVPN-AS is not installed
+    sudo_except("apt-get -qq -y purge openvpn-as")
+
     # We don't want _any_ output from the applications by default. Note that 
     # ntpdate is not needed/usable because on Amazon EC2 domUs are forced to use 
     # the time dom0 provides.
@@ -97,10 +104,6 @@ def setup_server():
     # Launch openvpn and iperf
     sudo_except("/etc/init.d/openvpn restart")
 
-
-    # Launching iperf using Fabric does not seem to work
-    # sudo_except("/usr/bin/iperf -s -D &")
-
 @task
 def setup_client():
     """Setup client-specific things"""
@@ -115,13 +118,36 @@ def setup_client():
     # Copy test scripts
     put_executables(src,"/tmp",get_tests())
 
+
+@task
+def setup_as_client():
+    """Setup AS client. Requires slightly different treatment from normal OpenVPN"""
+    sudo_except("apt-get -qq -y install iperf openvpn")
+    put_secret_files(src,vpndst,["as-client.conf"])
+    put_executables(src,"/etc",["crontab"])
+    put_executables(src,"/tmp",get_tests())
+
+    # We need to rename the configuration file so that test scripts can find it
+    rename(vpndst+"/as-client.conf",vpndst+"/client.conf")
+
+@task
+@hosts("ec2-184-73-141-17.compute-1.amazonaws.com")
+def setup_as_server():
+    """Prepare AS for performance tests"""
+    sudo_except("apt-get -qq -y install iperf")
+    sudo_except("apt-get -qq -y install dstat")
+    put_executables(src,"/tmp",["dstat.sh"])
+
+    # Open a port in the firewall for iperf.
+    #sudo_except("/sbin/iptables -D INPUT --protocol tcp -m tcp --dport 5001 -j ACCEPT")
+    sudo_except("/sbin/iptables -I INPUT --protocol tcp -m tcp --dport 5001 -j ACCEPT")
+
 @task
 def get_client_logs():
     """Get logfiles from clients"""
-    get("/tmp/iperf.log","logs/%(path)s-%(host)s")
+    get("/tmp/iperf-logs","logs/%(path)s-%(host)s")
 
 @task
 def get_server_logs():
     """Get logfiles from servers"""
     get("/tmp/dstat.csv","logs/%(path)s-%(host)s")
-
