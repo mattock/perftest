@@ -4,6 +4,7 @@
 
 from boto.ec2 import *
 from time import sleep
+import socket
 import threading
 import Queue
 import sys
@@ -70,9 +71,8 @@ class launcher_ec2(threading.Thread):
 			key_name=self.key_name,security_groups=self.security_groups,\
 			instance_type=self.instance_type,user_data=self.role,placement=self.availability_zone)
 			
-			# FIXME: test if connection to a to-be-configured server 
-			# can be established, instead of using a hack like this
-			sleep(30)			
+			# FIXME: try to make the connection test (below) to work; it is not yet bulletproof
+			sleep(30)
 
 		# Start polling for activated instances.
 		#
@@ -82,6 +82,7 @@ class launcher_ec2(threading.Thread):
 		# a) certain amount of time has passed since a new VM was activated
 		# b) when the number of active VMs equals number of launched VMs.
 		while True:
+			print "Polling for activated instances...\n"
 
 			# Check if there are any new active and valid instances
 		        reservations = conn.get_all_instances()
@@ -107,9 +108,22 @@ class launcher_ec2(threading.Thread):
 						instance.instance_type == self.instance_type and\
 						instance.state == 'running' and\
 						userdata == self.role:
-							self.queued_instances.append(ip)
-							self.queue.put(ip)
-							print "launcher_ec2: queued IP "+ip+"\n" 
+							try:
+								# Check if SSH is responding. If we don't do this,
+								# we get occasional "Connection refused" failures.
+								# NOTE: this could potentially lead into long deployment
+								# delays if a few servers are unresponsive.
+								#s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+								#s.connect((ip, 22))
+								#s.close()
+
+								# If it was, add the instance to the queue
+								self.queued_instances.append(ip)
+								self.queue.put(ip)
+								print "launcher_ec2: queued IP "+ip+"\n" 
+							except:
+								pass														
+
 						else:
 							self.invalid_instances.append(ip)
 
