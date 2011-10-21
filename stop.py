@@ -20,6 +20,7 @@ def Usage():
 	print
         print "  -r role      | --role=role        role of the VMs to terminate"
 	print
+	sys.exit(1)
 
 def main():
 
