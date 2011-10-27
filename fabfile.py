@@ -105,6 +105,16 @@ def setup_server():
     sudo_except("/etc/init.d/openvpn restart")
 
 @task
+def setup_server_22():
+    """Setup OpenVPN 2.2.1 server"""
+
+    sudo_except("wget -O - http://build.openvpn.org/repos/apt/conf/openvpn-apt.gpg.key|apt-key add -")
+    with cd("/etc/apt/sources.list.d"):
+        sudo_except("wget http://build.openvpn.org/repos/apt/conf/openvpn-lenny.list")
+
+    setup_server()
+
+@task
 def setup_client():
     """Setup client-specific things"""
     setup_common()
