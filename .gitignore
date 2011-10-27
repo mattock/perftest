@@ -3,3 +3,4 @@ config/*.conf
 *.crt
 *.key
 *.pyc
+logs
