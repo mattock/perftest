@@ -96,18 +96,24 @@ class launcher_ec2(threading.Thread):
 					else:
 						b64userdata=conn.get_instance_attribute(instance.id,"userData")['userData']
 						if b64userdata:
+							#print "Debug: b64userdata = " +b64userdata
 							userdata = base64.b64decode(b64userdata)
 						else:
 							userdata = ""
+							b64userdata = ""
+
+						#print "Debug: userdata  =   "+ userdata
+						#print "Debug: self.role =   "+ self.role
+						#print "---"
 
 						# Check if we want to add this instance to the queue. Note that
 						# get_instance_attribute does _not_ return one attribute, but a
 						# but a dictionary (a bug?)
 						if instance.key_name == self.key_name and\
-						instance.image_id == self.image_id and\
 						instance.instance_type == self.instance_type and\
 						instance.state == 'running' and\
 						userdata == self.role:
+
 							try:
 								# Check if SSH is responding. If we don't do this,
 								# we get occasional "Connection refused" failures.
