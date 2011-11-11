@@ -110,7 +110,6 @@ class launcher_ec2(threading.Thread):
 						# get_instance_attribute does _not_ return one attribute, but a
 						# but a dictionary (a bug?)
 						if instance.key_name == self.key_name and\
-						instance.instance_type == self.instance_type and\
 						instance.state == 'running' and\
 						userdata == self.role:
 
