@@ -37,7 +37,9 @@ END {
 
 	# Print results
 	if ( format == "csv" )
-        	print test";"subtest";"cpu_usr";"cpu_sys";"cpu_total";"cpu_wait
+        	print test";"subtest";"NR";"cpu_usr";"cpu_sys";"cpu_total";"cpu_wait
 	else if ( format == "mediawiki" )
-        	print "|"test"||"subtest"||"cpu_usr"||"cpu_sys"||"cpu_total"||"cpu_wait"\n|-"
+        	print "|"test"||"subtest"||"NR"||"cpu_usr"||"cpu_sys"||"cpu_total"||"cpu_wait"\n|-"
+	else if ( format == "trac" )
+        	print "||"test"||"subtest"||"NR"||"cpu_usr"||"cpu_sys"||"cpu_total"||"cpu_wait"||"
 }

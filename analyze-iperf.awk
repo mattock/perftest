@@ -6,12 +6,15 @@
 # [  3]  0.0-10.0 sec    134 MBytes    112 Mbits/sec
 
 /MBytes/ { ++clients }
-/MBytes/ { mbytes += $5 }
-/Mbits/ { mbits += $7 }
+/MBytes/ { transfer += $5 }
+/MBytes/ { bandwidth += $7 }
 END {
 
 if ( format == "csv" )
-	print test";"subtest";"host";"clients";"mbytes";"mbits";"mbits/clients
+	print test";"subtest";"host";"clients";"transfer";"bandwidth";"bandwidth/clients
 else if ( format == "mediawiki" )
-	print "|"test"||"subtest"||"host"||"clients"||"mbytes"||"mbits"||"mbits/clients"\n|-"
+	print "|"test"||"subtest"||"host"||"clients"||"transfer"||"bandwidth"||"bandwidth/clients"\n|-"
+else if ( format == "trac" )
+	print "||"test"||"subtest"||"host"||"clients"||"transfer"||"bandwidth"||"bandwidth/clients"||"
+
 }

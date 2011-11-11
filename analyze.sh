@@ -30,16 +30,23 @@ PATTERNS="10s 30s 60s"
 if [ "$2" == "csv" ]; then
 
 cat > $LOGDIR/analysis-iperf.$2 << EOF
-Test;Subtest;Host;Clients;Total transfer (MB);Total bandwidth (Mb/s);Average bandwidth (Mb/s)
+Test;Subtest;Host;Clients;Total transfer (MB);Total bandwidth (MB/s);Average bandwidth (MB/s)
 EOF
 
 elif [ "$2" == "mediawiki" ]; then
 
 cat > $LOGDIR/analysis-iperf.$2 <<EOF
 {| border="1" style="text-align:center;"
-|'''Test'''||'''Subtest'''||'''Host'''||'''Clients'''||'''Total transfer (MB)'''||'''Total bandwidth (Mb/s)'''||'''Average bandwidth (Mb/s)'''
+|'''Test'''||'''Subtest'''||'''Host'''||'''Clients'''||'''Total transfer (MB)'''||'''Total bandwidth (MB/s)'''||'''Average bandwidth (MB/s)'''
 |-
 EOF
+
+elif [ "$2" == "trac" ]; then
+
+cat > $LOGDIR/analysis-iperf.$2 <<EOF
+||'''Test'''||'''Subtest'''||'''Host'''||'''Clients'''||'''Total transfer (MB)'''||'''Total bandwidth (MB/s)'''||'''Average bandwidth (MB/s)'''||
+EOF
+
 
 fi
 
@@ -69,14 +76,20 @@ fi
 
 if [ "$2" == "csv" ]; then
 
-echo "Test;Subtest;CPU usr (%);CPU sys (%);CPU total (%);CPU wait (%)" >> $LOGDIR/analysis-dstat.$2
+echo "Test;Subtest;Real length;CPU usr (%);CPU sys (%);CPU total (%);CPU wait (%)" >> $LOGDIR/analysis-dstat.$2
 
 elif [ "$2" == "mediawiki" ]; then
 
 cat > $LOGDIR/analysis-dstat.$2 <<EOF
 {| border="1" style="text-align:center;"
-|'''Test'''||'''Subtest'''||'''CPU usr (%)'''||'''CPU sys (%)'''||'''CPU total (%)'''||'''CPU wait (%)'''
+|'''Test'''||'''Subtest'''||'''Real length'''||'''CPU usr (%)'''||'''CPU sys (%)'''||'''CPU total (%)'''||'''CPU wait (%)'''
 |-
+EOF
+
+elif [ "$2" == "trac" ]; then
+
+cat > $LOGDIR/analysis-dstat.$2 <<EOF
+||'''Test'''||'''Subtest'''||'''Real length'''||'''CPU usr (%)'''||'''CPU sys (%)'''||'''CPU total (%)'''||'''CPU wait (%)'''||
 EOF
 
 fi
