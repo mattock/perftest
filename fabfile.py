@@ -160,4 +160,4 @@ def get_client_logs():
 @task
 def get_server_logs():
     """Get logfiles from servers"""
-    get("/tmp/dstat.csv","logs/%(path)s-%(host)s")
+    get("/tmp/dstat.csv","logs/%(path)s")
