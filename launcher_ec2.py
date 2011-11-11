@@ -72,7 +72,7 @@ class launcher_ec2(threading.Thread):
 			instance_type=self.instance_type,user_data=self.role,placement=self.availability_zone)
 			
 			# FIXME: try to make the connection test (below) to work; it is not yet bulletproof
-			sleep(30)
+			sleep(60)
 
 		# Start polling for activated instances.
 		#
