@@ -42,13 +42,13 @@ def Usage():
 	print
 	print "Setup already running instances as test clients using SSH credentials from config/ssh.conf"
 	print "and connecting to OpenVPN server at vpn.domain.com."
-	print "   python start.py -o ec2 -i 0 -t 4 -r client -a setup_client -m vpn.domain.com"
+	print "   python start.py -o ec2 -i 0 -t 4 -r client -a setup_client -m vpn.domain.com -e 10.5.99.1"
 	print
 	print "Create 4 new client instances without configuring anything:"
 	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 0"
 	print
 	print "Create 4 new instances and configure all running instances as clients:"
-	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4 -r client -a setup_client -m vpn.domain.com"
+	print "   python start.py -u user -k ~/.ssh/amazon.pem -o ec2 -i 4 -t 4 -r client -a setup_client -m vpn.domain.com -e 10.5.99.1"
 	print
 	print "Download logs from all clients using credentials from config/ssh.conf:"
 	print "   python start.py -i 0 -t 4 -r client -a get_client_logs"

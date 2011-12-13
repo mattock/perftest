@@ -141,6 +141,18 @@ def setup_as_client():
     rename(vpndst+"/as-client.conf",vpndst+"/client.conf")
 
 @task
+def setup_as_large_client():
+    """Setup AS client for the m1.large instance. Requires slightly different treatment from normal OpenVPN"""
+    sudo_except("apt-get -qq -y install iperf openvpn")
+    put_secret_files(src,vpndst,["as-large-client.conf"])
+    put_executables(src,"/etc",["crontab"])
+    put_executables(src,"/tmp",get_tests())
+
+    # We need to rename the configuration file so that test scripts can find it
+    rename(vpndst+"/as-large-client.conf",vpndst+"/client.conf")
+
+
+@task
 @hosts("ec2-184-73-141-17.compute-1.amazonaws.com")
 def setup_as_server():
     """Prepare AS for performance tests"""
@@ -161,3 +173,4 @@ def get_client_logs():
 def get_server_logs():
     """Get logfiles from servers"""
     get("/tmp/dstat.csv","logs/%(path)s")
+    #get("/tmp/server-iperf.log","logs/%(path)s")

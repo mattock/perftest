@@ -24,7 +24,8 @@ ANALYSIS_DSTAT="$LOGDIR/analysis-dstat.$2
 rm -f $LOGDIR/analysis-*
 
 # Analyze (client) iperf logs
-PATTERNS="10s 30s 60s"
+#PATTERNS="10s 30s 60s"
+PATTERNS="120s"
 
 # Print headers
 if [ "$2" == "csv" ]; then

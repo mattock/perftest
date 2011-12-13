@@ -15,7 +15,7 @@ Fixing it is trivial, though.
 ARCHITECTURE
 ------------
 
-Currently there are four different components:
+Currently there are currently many components:
 
 1) Provider/poller/queuer thread(s)
 
@@ -32,8 +32,8 @@ thread. They then launch one Fabric process per VM. Fabric takes care of
 configuring the VMs. When it exits, the configurer thread marks that IP as done 
 and removes it from the queue.
 
-There are usually many of these threads, as Fabric itself does not support 
-multi-threaded operation.
+There are usually many of these threads, as old versions of Fabric (pre-1.3) did 
+not support multithreaded/multiprocess operation.
 
 3) Nain program
 
@@ -54,6 +54,7 @@ directory:
 - ec2.conf: various (sensitive) Amazon EC2-specific settings
 - cron.conf: cron-specific settings, use to generate a valid crontab
 - tests.conf: test control data (not the actual test scripts)
+- ssh.conf: ssh configuration details (saves typing)
 
 6) Resources
 
@@ -61,6 +62,33 @@ The "resources" directory contains all files Fabric uploads to the clients.
 These files can be static (e.g. OpenVPN certificates) or dynamically generated 
 (e.g. the crontab file used for timing the tests).
 
+7) Analysis scripts
+
+The "analyze.sh" script drives the awk scripts which at the moment process iperf 
+and dstat logs and generate required output (e.g. Trac/Mediawiki tables, CSV).
+
+TEST PROCESS
+------------
+
+At the moment the tests require quite a lot of manual work, regardless of all 
+the automation that's implemented:
+
+1) Launch and configure a server instance (start.py or manually)
+2) Launch and configure a number of client instances (start.py)
+3) Launch "iperf -s" on the server
+4) Launch "dstat.sh" on the server
+5) Wait for the tests to run
+6) Fetch log files from server and clients (start.py/scp)
+7) Move the log files to a new subdirectory in logs/
+8) Open dstat.csv in a spreadsheet, creating a new spreadsheet for each test
+   segment, so that each spreadsheet contains only those time periods where
+   server was under load(*). Make sure that the language for all cells is set
+   to English (USA), so that "." is used a the decimal separator.
+9) Run analyze.sh with correct arguments
+10) Paste the analysis files (logs/logname/analysis-*) to wherever you wish
+
+(*) This is a crude and time-consuming method, but algorithmicly detecting the 
+test case borders is error-prone and easily skews the results.
 
 DEPENDENCIES
 ------------
@@ -92,13 +120,11 @@ instead of stdout.
 USAGE
 -----
 
-Edit the configuration files in "config" directory to your liking. Both 
-"ec2.conf" and "cron.conf" should be fairly straightforward to setup, but the 
-"tests.conf" needs further explanation.
-
-Each section header must be accompanied by a test script with the same name in 
-"resources". For example, if test is called "test1", you must create a test 
-script called "resources/test1" or Fabric will bail out.
+Edit the configuration files in "config" directory to your liking. The 
+"tests.conf" requires some discussion. Each section header must be accompanied 
+by a test script with the same name in "resources". For example, if test is 
+called "test1", you must create a test script called "resources/test1" or Fabric 
+will bail out.
 
 The "time" variable defines how many minutes from the launch of start.py 
 it takes before the test will be triggered (using cron). The "server" variable 
@@ -117,3 +143,5 @@ TODO
 ----
 
 - Reimplement full "local" provider
+- Modify for new Fabric versions (1.3+) with multiprocessing support
+- Make log analysis less painful
