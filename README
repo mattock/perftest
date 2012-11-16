@@ -11,6 +11,13 @@ Currently Amazon EC2 provider is supported, and the support for a "local"
 provider has been implemented but is broken atm due to architectural changes. 
 Fixing it is trivial, though.
 
+To fetch the latest source code, go to
+
+<https://github.com/mattock/perftest>
+
+Enhancement requests, bug reports, patches and such can be handled from there as 
+well.
+
 
 ARCHITECTURE
 ------------
@@ -35,7 +42,7 @@ and removes it from the queue.
 There are usually many of these threads, as old versions of Fabric (pre-1.3) did 
 not support multithreaded/multiprocess operation.
 
-3) Nain program
+3) Main program
 
 The main program (start.py) is responsible for reading configuration files and 
 parsing command-line arguments, and for launching the appropriate number of 
